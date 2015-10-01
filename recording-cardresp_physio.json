@@ -1,6 +1,10 @@
 {
-  "SamplingFrequency": 500.0, 
-  "StartTime": 0.0, 
-  "Columns": ["trigger", "cardiac", "respiratory"], 
-  "ContentDescription": "Activity recorded with a pulse oximeter (cardiac) and respiration belt."
+    "SamplingFrequency": 500.0, 
+    "StartTime": 0.0, 
+    "Columns": [
+        "trigger", 
+        "cardiac", 
+        "respiratory"
+    ], 
+    "ContentDescription": "Activity recorded with a pulse oximeter (cardiac) and respiration belt."
 }

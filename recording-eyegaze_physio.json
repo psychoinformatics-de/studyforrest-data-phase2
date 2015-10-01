@@ -1,0 +1,6 @@
+{
+  "SamplingFrequency": 1000.0, 
+  "StartTime": 0.0, 
+  "Columns": ["x", "y", "pupil_dil", "movieframe_idx"], 
+  "ContentDescription": "The x/y coordinates are normalized to (0,0) at the top-left corner of the movie stimulus (already excluding the gray horizontal bars)."
+}

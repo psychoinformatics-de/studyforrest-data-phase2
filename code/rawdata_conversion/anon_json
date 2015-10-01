@@ -1,0 +1,26 @@
+#!/usr/bin/python
+
+import sys
+import json
+import collections
+
+infile = sys.argv[1]
+exclude = sys.argv[2:]
+
+j = json.load(open(infile), object_pairs_hook=collections.OrderedDict)
+
+for ex in exclude:
+    parent = None
+    obj = j
+    for e in ex.split('.'):
+        if not e in obj:
+            parent = None
+            obj = j
+            continue
+        else:
+            parent = obj
+            obj = obj[e]
+    if not obj is j:
+        del parent[e]
+outfile = open(infile, 'w')
+outfile.write('%s\n' % json.dumps(j, indent=4))

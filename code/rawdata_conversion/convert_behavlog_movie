@@ -17,11 +17,7 @@ import sys
 
 logfilename = sys.argv[1]
 outdir = sys.argv[2]
-task = "objectcategories"
-block_stim_length = 16  # in seconds
-
-condition_labels = ['body', 'face', 'house', 'object', 'scene', 'scramble']
-
+task = "movie"
 
 def fname2sid(filename):
     test = os.path.split(filename)[1].split('_')[0]
@@ -42,6 +38,7 @@ def log2data(fname):
       Each item is a list with the relevant fields from the relevant lines.
     """
     outsegments = {}
+    ratings = []
     seg = None
     import gzip
     import re
@@ -60,9 +57,13 @@ def log2data(fname):
             last_fonset = None
             last_ast = None
             last_vst = None
+            last_rating = None
         if seg is None:
             # ignore everything before start of first segment
             continue
+        if not last_trigger_time is None and last_fidx is None and last_rating is None and log.startswith('Keypress:'):
+            last_rating = int(log.split()[-1])
+            ratings.append(last_rating)
         if log.startswith('Keypress: t'):
             # trigger handling
             if start_trigger is None:
@@ -88,7 +89,7 @@ def log2data(fname):
                 last_fonset = time
                 last_fidx = fidx
                 last_ast = last_vst = None
-        if start_trigger and last_fidx and log.startswith('Set pos='):
+        if start_trigger and last_fidx and (log.startswith('Set pos=') or log.startswith('unnamed PatchStim')):
             # at the end of a segment, flush last frame
             out.append((last_fonset - start_trigger,
                         time - last_fonset,
@@ -97,8 +98,9 @@ def log2data(fname):
                         last_ast,
                         last_trigger_time - start_trigger))
             last_fidx = None
+
     outsegments[seg] = out
-    return outsegments
+    return outsegments, ratings
 
 
 def write_onsets(data, outdir, anonid, run, task):
@@ -126,10 +128,20 @@ def write_onsets(data, outdir, anonid, run, task):
 
 
 def generate_output(data, outdir, anonid, task):
-    assert(len(data) == 8)
-    for seg in data:
+    import json
+    onsets, ratings = data
+    assert(len(onsets) == 8)
+    assert(len(ratings) == 8)
+    for seg in onsets:
         assert(seg in range(8))
-        write_onsets(data[seg], outdir, anonid, seg + 1, 'movie')
+        write_onsets(onsets[seg], outdir, anonid, seg + 1, 'movie')
+    # ratings
+    fname = os.path.join(
+        outdir, anonid, 'ses-movie',
+        '%s_ses-movie_task-%s_bold.json' % (anonid, task))
+    json.dump({"StoryDepthSegmentRatings": ratings}, open(fname, 'w'), indent=4)
+
+
 
 
 ##############################

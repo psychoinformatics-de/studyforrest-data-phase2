@@ -1,8 +1,12 @@
 import numpy as np
+import os
 from mvpa2.datasets import Dataset, vstack
 
 
-def movie_dataset(subj, preproc=None):
+def movie_dataset(
+        subj, preproc=None,
+        base_path=os.curdir,
+        fname_tmpl='sub-%(subj)s/ses-movie/func/sub-%(subj)s_ses-movie_task-movie_run-%(run)i_recording-eyegaze_physio.tsv.gz'):
     """
     Load eyegaze recordings from all runs a merge into a consecutive timeseries
 
@@ -17,6 +21,11 @@ def movie_dataset(subj, preproc=None):
       array has the field 'x', 'y', 'pupil', and 'movie_frame'. It needs to
       return a record array with the same fields and must not change the
       sampling rate or number of samples.
+    base_path : path
+      Base directory for input file discovery.
+    fname_tmpl : str
+      Template expression to match input files. Support dict expansion with
+      'subj' and 'run' keys.
 
     Returns
     -------
@@ -38,8 +47,7 @@ def movie_dataset(subj, preproc=None):
     tdiff = []
     for seg, duration in enumerate(seg_durations):
         raw = np.recfromcsv(
-            'sub-%s/ses-movie/func/sub-%s_ses-movie_task-movie_run-%i_recording-eyegaze_physio.tsv.gz'
-            % (subj, subj, seg + 1),
+            os.path.join(base_path, fname_tmpl % dict(subj=subj, run=seg + 1)),
             delimiter='\t',
             names=('x', 'y', 'pupil', 'movie_frame'))
         if not preproc is None:

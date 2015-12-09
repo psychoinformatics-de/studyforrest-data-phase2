@@ -116,8 +116,8 @@ while 1:
 
     for df_idx, df in enumerate(data_list):
         cur_df = df[df['frame'] == frame]
-        x = cur_df['x'].mean()
-        y = cur_df['y'].mean()
+        x = np.median(cur_df['x'])
+        y = np.median(cur_df['y'])
 
         if not np.isnan(x):
             # draw single dots

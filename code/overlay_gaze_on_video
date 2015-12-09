@@ -7,9 +7,15 @@ Usage:
   video_out_path - path to store gaze overlayed video
   gaze_data_x - path to gaze data stored as tsv with [x,y,pupil,frame] like convert_eyelink_to_cont does
 
+  OR
+
+  provide a subject code to build a merged eyegaze timeseries across all movie
+  segments (with any overlap removed)
+
 Example:
   ./overlay_gaze_on_video fg_av_seg0.mkv fg_av_seg0_et.mkv anondata/sub-01_ses-movie_task-movie_recording-eyegaze_run-1_physio.tsv
 
+  ./overlay_gaze_on_video fg_av_researchcut.mkv fg_et.mkv 01 02 03 ...
 
 Script needs:
   cv2, numpy, pylab, scipy.ndimage
@@ -38,10 +44,10 @@ heatmap_scale = 5  # speed-tuning parameter, reduces size of headmap image
 alpha_gazes_contourlines = 1
 
 # video position offsets
-# MIH: this has been dealt with in the "recording-eyegaze" files
-#      already
-#x_offset = 0
-#y_offset = 0
+# gaze coordinates are relative to the actual movie frame, but the video
+# files feature a 87px high gray bar at the top
+x_offset = 0
+y_offset = 87
 
 ### DECLARE FILENAMES
 if len(sys.argv) < 4:
@@ -84,8 +90,18 @@ def get_hierarchy_levels(hierarchy):
 # open input video
 vid = cv2.VideoCapture(video_i_path)
 
-# open data as panda DataFrame
-data_list = map(lambda fn: np.recfromcsv(fn, names=['x', 'y', 'pup', 'frame'], delimiter='\t'), tsv_path_list)
+if tsv_path_list[0].isdigit():
+    # this is a subject id -> use utility function to load all data
+    from eyegaze_utils import movie_dataset
+    data_list = [movie_dataset(s) for s in tsv_path_list]
+    print data_list[0]
+    data_list = [{'x': d.samples[:, 0],
+                  'y': d.samples[:, 1],
+                  'frame': d.sa.movie_frame} for d in data_list]
+else:
+    # open data as record array
+    data_list = map(lambda fn: np.recfromcsv(fn, names=['x', 'y', 'pup', 'frame'], delimiter='\t'), tsv_path_list)
+    data_list = [{'x': d['x'], 'y': d['y'], 'frame': d['frame']} for d in data_list]
 
 ### OTHER DATE DECLARATIONS
 # create video writer
@@ -115,9 +131,9 @@ while 1:
     overlay_heatmap_img = np.zeros((img.shape[0], img.shape[1], 3), 'uint8')
 
     for df_idx, df in enumerate(data_list):
-        cur_df = df[df['frame'] == frame]
-        x = np.median(cur_df['x'])
-        y = np.median(cur_df['y'])
+        selector = df['frame'] == frame
+        x = np.median(df['x'][selector]) + x_offset
+        y = np.median(df['y'][selector]) + y_offset
 
         if not np.isnan(x):
             # draw single dots

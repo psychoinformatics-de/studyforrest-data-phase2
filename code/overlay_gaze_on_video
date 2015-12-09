@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Usage: 
+Usage:
   ./overlay_gaze_on_video <video_in_path> <video_out_path> <gaze_data_1> [<gaze_data_2> [...]]
 
   video_in_path - path of original video (readable by opencv library)
@@ -14,7 +14,7 @@ Example:
 Script needs:
   cv2, numpy, pylab, pandas, scipy.ndimage
 
-Author: 
+Author:
   Daniel Kottke (daniel.kottke@ovgu.de)
 """
 
@@ -33,9 +33,9 @@ alpha_video = 1
 alpha_gazes_single = .5
 
 # gaze contour lines options
-n_contourlines = 6 # number of contour lines
-heatmap_gauss_sigma = 80 # standard deviation of Gaussian kernel for gaze density estimation
-heatmap_scale = 5 # speed-tuning parameter, reduces size of headmap image
+n_contourlines = 6  # number of contour lines
+heatmap_gauss_sigma = 80  # standard deviation of Gaussian kernel for gaze density estimation
+heatmap_scale = 5  # speed-tuning parameter, reduces size of headmap image
 alpha_gazes_contourlines = 1
 
 # video position offsets
@@ -44,8 +44,8 @@ y_offset = 68
 
 ### DECLARE FILENAMES
 if len(sys.argv) < 4:
-  print(__doc__)
-  sys.exit(1)
+    print(__doc__)
+    sys.exit(1)
 
 # input video path
 video_i_path = str(sys.argv[1])
@@ -55,28 +55,29 @@ video_o_path = str(sys.argv[2])
 
 # gaze pathes
 tsv_path_list = list()
-for i in range(len(sys.argv)-3):
-  tsv_path_list.append(sys.argv[i+3])
+for i in range(len(sys.argv) - 3):
+    tsv_path_list.append(sys.argv[i + 3])
 
 
 ### FUNCTIONS FOR CONTOURLINES OF OPENCV
-def hierarchy_recursion(hierarchy_levels, hierarchy, idx ,act_level):
+def hierarchy_recursion(hierarchy_levels, hierarchy, idx, act_level):
     if idx < 0:
         return hierarchy_levels
     hierarchy_levels[idx] = act_level
-    hierarchy_levels = hierarchy_recursion(hierarchy_levels, hierarchy, hierarchy[0,idx,0] ,act_level)
-    hierarchy_levels = hierarchy_recursion(hierarchy_levels, hierarchy, hierarchy[0,idx,2] ,act_level+1)
+    hierarchy_levels = hierarchy_recursion(hierarchy_levels, hierarchy, hierarchy[0, idx, 0], act_level)
+    hierarchy_levels = hierarchy_recursion(hierarchy_levels, hierarchy, hierarchy[0, idx, 2], act_level + 1)
     return hierarchy_levels
+
 
 def get_hierarchy_levels(hierarchy):
     if hierarchy is None:
         return np.array([])
-    hierarchy_levels = np.zeros(len(hierarchy[0]),dtype=int) - 1
-    
+    hierarchy_levels = np.zeros(len(hierarchy[0]), dtype=int) - 1
+
     for i in range(len(hierarchy_levels)):
         if hierarchy_levels[i] < 0:
-            hierarchy_levels = hierarchy_recursion(hierarchy_levels, hierarchy, i ,0)
-    
+            hierarchy_levels = hierarchy_recursion(hierarchy_levels, hierarchy, i, 0)
+
     return hierarchy_levels
 
 
@@ -85,78 +86,78 @@ def get_hierarchy_levels(hierarchy):
 vid = cv2.VideoCapture(video_i_path)
 
 # open data as panda DataFrame
-data_list = map(lambda fn:pandas.read_csv(fn, header=False, names=['x','y','pup','frame'], sep='\t'), tsv_path_list)
+data_list = map(lambda fn: pandas.read_csv(fn, header=False, names=['x', 'y', 'pup', 'frame'], sep='\t'), tsv_path_list)
 
 ### OTHER DATE DECLARATIONS
 # create video writer
 vid_writer = cv2.VideoWriter()
-vid_writer.open(video_o_path, cv2.cv.CV_FOURCC(*'XVID'), vid.get(cv2.cv.CV_CAP_PROP_FPS ), (int(vid.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH )), int(vid.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
+vid_writer.open(video_o_path, cv2.cv.CV_FOURCC(*'XVID'), vid.get(cv2.cv.CV_CAP_PROP_FPS), (int(vid.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)), int(vid.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
 
 ### colormap declaration
-colors_gaze_dots = plt.get_cmap('hsv',len(data_list)+1)
-colors_contourlines = plt.get_cmap('copper',n_contourlines)
-convert2cvcolor = lambda x:np.array(np.array(x[0:3])*255,int)
+colors_gaze_dots = plt.get_cmap('hsv', len(data_list) + 1)
+colors_contourlines = plt.get_cmap('copper', n_contourlines)
+convert2cvcolor = lambda x: np.array(np.array(x[0:3]) * 255, int)
 
 ### loop through all images
 while 1:
-  (success, img) = vid.read()
-  
-  if not success:
-    break
-  
-  frame = vid.get(cv2.cv.CV_CAP_PROP_POS_FRAMES)
-  
-  # create image for single dot per gaze
-  overlay_single_img = np.zeros((img.shape[0], img.shape[1] ,3),'uint8')
-  
-  # create image for heatmap that represents the disribution of gazes
-  heatmap = np.zeros((img.shape[0]/heatmap_scale, img.shape[1]/heatmap_scale),'uint8')
-  overlay_heatmap_img = np.zeros((img.shape[0], img.shape[1] ,3),'uint8')
-  
-  for df_idx, df in enumerate(data_list):
-    cur_df = df[df['frame']==frame]
-    x = cur_df['x'].mean() + x_offset
-    y = cur_df['y'].mean() + y_offset
-    
+    (success, img) = vid.read()
+
+    if not success:
+        break
+
+    frame = vid.get(cv2.cv.CV_CAP_PROP_POS_FRAMES)
+
+    # create image for single dot per gaze
+    overlay_single_img = np.zeros((img.shape[0], img.shape[1], 3), 'uint8')
+
+    # create image for heatmap that represents the disribution of gazes
+    heatmap = np.zeros((img.shape[0] / heatmap_scale, img.shape[1] / heatmap_scale), 'uint8')
+    overlay_heatmap_img = np.zeros((img.shape[0], img.shape[1], 3), 'uint8')
+
+    for df_idx, df in enumerate(data_list):
+        cur_df = df[df['frame'] == frame]
+        x = cur_df['x'].mean() + x_offset
+        y = cur_df['y'].mean() + y_offset
+
     if not np.isnan(x):
-      # draw single dots
-      cv2.circle(overlay_single_img, (int(x),int(y)), 15, convert2cvcolor(colors_gaze_dots(df_idx)))
-      pts = cv2.ellipse2Poly((int(x),int(y)), (2,2), 0, 0, 360, int(360/6))
-      cv2.fillConvexPoly(overlay_single_img, pts, convert2cvcolor(colors_gaze_dots(df_idx)))
-      
-      # mark position for heatmap
-      cv2.circle(heatmap, (int(x)/heatmap_scale, int(y)/heatmap_scale), 1, 1)
-    
-  # process heatmap
-  heatmap = np.array(heatmap,'float32')
-  heatmap = ndi.gaussian_filter(heatmap, sigma=heatmap_gauss_sigma/heatmap_scale)
-  heatmap = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
-  cv2.normalize(heatmap, heatmap, 0, n_contourlines, cv2.NORM_MINMAX)
-  heatmap = np.array(heatmap,'uint8') % 2
-  
-  # find contours
-  contours, hierarchy = cv2.findContours(heatmap, cv2.cv.CV_RETR_TREE, cv2.cv.CV_CHAIN_APPROX_NONE)
-  hierarchy_levels = get_hierarchy_levels(hierarchy)
-  
-  # draw contourlines
-  for i in range(len(contours)):
-    c2 = cv2.approxPolyDP(contours[i], 2, 0)
-    cv2.polylines(overlay_heatmap_img, [c2], 3, convert2cvcolor(colors_contourlines(hierarchy_levels[i])), 1)
-  
-  # combine images
-  final_img = cv2.addWeighted(img, alpha_video, img, 0, 0)
-  
-  # combine images: gaze dots
-  mask_gaze_dots = np.array(ndi.maximum_filter(overlay_single_img,[1,1,5])!=0,'uint8')
-  mask_gaze_dots = cv2.multiply(final_img, mask_gaze_dots)
-  final_img = cv2.addWeighted(final_img, 1, mask_gaze_dots, -alpha_gazes_single, 0)
-  final_img = cv2.addWeighted(final_img, 1, overlay_single_img, alpha_gazes_single, 0)
-  
-  # combine images: gaze contour lines
-  mask_gaze_contour = np.array(ndi.maximum_filter(overlay_heatmap_img,[1,1,5])!=0,'uint8')
-  mask_gaze_contour = cv2.multiply(final_img, mask_gaze_contour)
-  final_img = cv2.addWeighted(final_img, 1, mask_gaze_contour, -alpha_gazes_contourlines, 0)
-  final_img = cv2.addWeighted(final_img, 1, overlay_heatmap_img, alpha_gazes_contourlines, 0)
-  
-  # write image to video writer
-  vid_writer.write(final_img)
+        # draw single dots
+        cv2.circle(overlay_single_img, (int(x), int(y)), 15, convert2cvcolor(colors_gaze_dots(df_idx)))
+        pts = cv2.ellipse2Poly((int(x), int(y)), (2, 2), 0, 0, 360, int(360 / 6))
+        cv2.fillConvexPoly(overlay_single_img, pts, convert2cvcolor(colors_gaze_dots(df_idx)))
+
+        # mark position for heatmap
+        cv2.circle(heatmap, (int(x) / heatmap_scale, int(y) / heatmap_scale), 1, 1)
+
+    # process heatmap
+    heatmap = np.array(heatmap, 'float32')
+    heatmap = ndi.gaussian_filter(heatmap, sigma=heatmap_gauss_sigma / heatmap_scale)
+    heatmap = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
+    cv2.normalize(heatmap, heatmap, 0, n_contourlines, cv2.NORM_MINMAX)
+    heatmap = np.array(heatmap, 'uint8') % 2
+
+    # find contours
+    contours, hierarchy = cv2.findContours(heatmap, cv2.cv.CV_RETR_TREE, cv2.cv.CV_CHAIN_APPROX_NONE)
+    hierarchy_levels = get_hierarchy_levels(hierarchy)
+
+    # draw contourlines
+    for i in range(len(contours)):
+        c2 = cv2.approxPolyDP(contours[i], 2, 0)
+        cv2.polylines(overlay_heatmap_img, [c2], 3, convert2cvcolor(colors_contourlines(hierarchy_levels[i])), 1)
+
+    # combine images
+    final_img = cv2.addWeighted(img, alpha_video, img, 0, 0)
+
+    # combine images: gaze dots
+    mask_gaze_dots = np.array(ndi.maximum_filter(overlay_single_img, [1, 1, 5]) != 0, 'uint8')
+    mask_gaze_dots = cv2.multiply(final_img, mask_gaze_dots)
+    final_img = cv2.addWeighted(final_img, 1, mask_gaze_dots, -alpha_gazes_single, 0)
+    final_img = cv2.addWeighted(final_img, 1, overlay_single_img, alpha_gazes_single, 0)
+
+    # combine images: gaze contour lines
+    mask_gaze_contour = np.array(ndi.maximum_filter(overlay_heatmap_img, [1, 1, 5]) != 0, 'uint8')
+    mask_gaze_contour = cv2.multiply(final_img, mask_gaze_contour)
+    final_img = cv2.addWeighted(final_img, 1, mask_gaze_contour, -alpha_gazes_contourlines, 0)
+    final_img = cv2.addWeighted(final_img, 1, overlay_heatmap_img, alpha_gazes_contourlines, 0)
+
+    # write image to video writer
+    vid_writer.write(final_img)

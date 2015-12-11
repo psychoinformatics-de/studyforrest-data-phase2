@@ -29,6 +29,7 @@ import numpy as np
 import pylab as plt
 import scipy.ndimage as ndi
 import sys
+import os
 
 ### PARAMETERS
 # video output options
@@ -92,8 +93,17 @@ vid = cv2.VideoCapture(video_i_path)
 
 if tsv_path_list[0].isdigit():
     # this is a subject id -> use utility function to load all data
+    from mvpa2.base.hdf5 import h5load, h5save
     from eyegaze_utils import movie_dataset
-    data_list = [movie_dataset(s) for s in tsv_path_list]
+    data_list = []
+    for s in tsv_path_list:
+        cachefilename = os.path.join('cache', 'sub-%s_avmovie_eyegaze.hdf5' % s)
+        if os.path.exists(cachefilename):
+            ds = h5load(cachefilename)
+        else:
+            ds = movie_dataset(s)
+            h5save(cachefilename, ds, compression=9)
+        data_list.append(ds)
     print data_list[0]
     data_list = [{'x': d.samples[:, 0],
                   'y': d.samples[:, 1],
@@ -113,6 +123,31 @@ colors_gaze_dots = plt.get_cmap('hsv', len(data_list) + 1)
 colors_contourlines = plt.get_cmap('copper', n_contourlines)
 convert2cvcolor = lambda x: np.array(np.array(x[0:3]) * 255, int)
 
+
+def get_slice(arr, start_idx, crit):
+    idx = start_idx
+    val = arr[idx]
+    l = len(arr)
+    start = None
+    end = None
+    while val <= crit:
+        if start is None:
+            if val == crit:
+                start = idx
+        elif val != crit:
+            break
+        idx += 1
+        if idx >= l:
+            break
+        val = arr[idx]
+    end = idx
+    if start is None:
+        return slice(start_idx, start_idx)
+    else:
+        return slice(start, end)
+
+start_idx = [0] * len(data_list)
+
 ### loop through all images
 while 1:
     (success, img) = vid.read()
@@ -131,9 +166,10 @@ while 1:
     overlay_heatmap_img = np.zeros((img.shape[0], img.shape[1], 3), 'uint8')
 
     for df_idx, df in enumerate(data_list):
-        selector = df['frame'] == frame
-        x = np.median(df['x'][selector]) + x_offset
-        y = np.median(df['y'][selector]) + y_offset
+        slice_ = get_slice(df['frame'], start_idx[df_idx], int(frame))
+        start_idx[df_idx] = slice_.stop
+        x = np.median(df['x'][slice_]) + x_offset
+        y = np.median(df['y'][slice_]) + y_offset
 
         if not np.isnan(x):
             # draw single dots

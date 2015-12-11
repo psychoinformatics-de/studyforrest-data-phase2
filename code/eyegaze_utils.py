@@ -80,3 +80,17 @@ def movie_dataset(
     ds.a['movie_fps'] = movie_fps
     ds.a['run_duration_deviation'] = tdiff
     return ds
+
+
+def preprocess_eyegaze(eyegaze, blink_margin=200, filter_width=40):
+    from scipy.ndimage.morphology import binary_dilation
+    from scipy.ndimage.filters import median_filter
+
+    mask = binary_dilation(np.isnan(eyegaze['x']), iterations=blink_margin)
+    # filter x and y coordinate separately
+    eyegaze['x'] = median_filter(eyegaze['x'], size=filter_width)
+    eyegaze['y'] = median_filter(eyegaze['y'], size=filter_width)
+    # blank blink margin
+    eyegaze['x'][mask] = np.nan
+    eyegaze['y'][mask] = np.nan
+    return eyegaze

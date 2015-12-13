@@ -64,7 +64,7 @@ def movie_dataset(
         if seg > 0:
             # cut the beginning to have a seamless start after the previous
             # segment
-            ds = ds[ds.sa.movie_frame > segments[-1].movie_frame.max()]
+            ds = ds[ds.sa.movie_frame > segments[-1].sa.movie_frame.max()]
         ds.sa['movie_run'] = [seg + 1] * len(ds)
         segments.append(ds)
     ds = vstack(segments)

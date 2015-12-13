@@ -94,14 +94,14 @@ vid = cv2.VideoCapture(video_i_path)
 if tsv_path_list[0].isdigit():
     # this is a subject id -> use utility function to load all data
     from mvpa2.base.hdf5 import h5load, h5save
-    from eyegaze_utils import movie_dataset
+    from eyegaze_utils import movie_dataset, preprocess_eyegaze
     data_list = []
     for s in tsv_path_list:
         cachefilename = os.path.join('cache', 'sub-%s_avmovie_eyegaze.hdf5' % s)
         if os.path.exists(cachefilename):
             ds = h5load(cachefilename)
         else:
-            ds = movie_dataset(s)
+            ds = movie_dataset(s, preprocess_eyegaze)
             h5save(cachefilename, ds, compression=9)
         data_list.append(ds)
     print data_list[0]
@@ -148,6 +148,8 @@ def get_slice(arr, start_idx, crit):
 
 start_idx = [0] * len(data_list)
 
+#vid.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, 64800)
+
 ### loop through all images
 while 1:
     (success, img) = vid.read()
@@ -166,7 +168,11 @@ while 1:
     overlay_heatmap_img = np.zeros((img.shape[0], img.shape[1], 3), 'uint8')
 
     for df_idx, df in enumerate(data_list):
-        slice_ = get_slice(df['frame'], start_idx[df_idx], int(frame))
+        try:
+            slice_ = get_slice(df['frame'], start_idx[df_idx], int(frame))
+        except IndexError:
+            # end of array
+            break
         start_idx[df_idx] = slice_.stop
         x = np.median(df['x'][slice_]) + x_offset
         y = np.median(df['y'][slice_]) + y_offset

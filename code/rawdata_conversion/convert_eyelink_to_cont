@@ -3,12 +3,21 @@ import sys
 import os
 fpath = sys.argv[1]
 
+# how much time does it take for the video signal to appear on the projection
+# screen after the stimulation computer thinks it flipped the video buffer
+# signal needs to travel through an optical DVI connection
+# measured delay is 6-8 video refresh cycles @60 Hz. Correct for the lower
+# bound of this window of uncertainty
+vsync_msg_onset_delay = 100  # in samples at eyegaze sampling rate (AKA ms)
+
 import pandas
 import numpy as np
 from cili.util import load_eyelink_dataset
 samp, events = load_eyelink_dataset(fpath)
 # filter for spurious frame idx messages after the end of the recording
-frame_start = np.array([s for s in events.MSG[events.MSG.label == 'FIDX:'].index if s in samp.index])
+frame_start = np.array(
+    [s - vsync_msg_onset_delay
+        for s in events.MSG[events.MSG.label == 'FIDX:'].index if s in samp.index])
 samp = samp.loc[frame_start[0]:frame_start[-1] + 100]
 fidx = np.zeros(len(samp), dtype='int')
 frame_start -= frame_start[0]
@@ -29,12 +38,14 @@ subjprefix = os.path.basename(fpath).split('_')[0]
 # quick test to be a bit more future-proof in detecting name changes
 assert(int(subjprefix.split('-')[1]) > 0)
 assert(len(subjprefix.split('-')[1]) == 2)
+# place y=0 at the top of the actual movie frame content (not the top of the
+# gray bar!)
 if subjprefix in ('sub-02', 'sub-10', 'sub-20'):
     # movie was centered for those
     merged.loc[:, y_col] -= 239
 else:
     merged.loc[:, y_col] -= 68
 path_comps = fpath.split('_')
-ofname='%s_recording-eyegaze_%s_physio.tsv' \
+ofname='%s_%s_recording-eyegaze_physio.tsv' \
         % ('_'.join(path_comps[:-2]), path_comps[-2])
 merged.to_csv(ofname, index=False, header=False, sep='\t')

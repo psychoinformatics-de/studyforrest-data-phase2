@@ -8,6 +8,8 @@ fpath = sys.argv[1]
 # signal needs to travel through an optical DVI connection
 # measured delay is 6-8 video refresh cycles @60 Hz. Correct for the lower
 # bound of this window of uncertainty
+# positive offset indicates that the video actually appears _later_ than the
+# time stamps indicate
 vsync_msg_onset_delay = 100  # in samples at eyegaze sampling rate (AKA ms)
 
 import pandas
@@ -16,7 +18,7 @@ from cili.util import load_eyelink_dataset
 samp, events = load_eyelink_dataset(fpath)
 # filter for spurious frame idx messages after the end of the recording
 frame_start = np.array(
-    [s - vsync_msg_onset_delay
+    [s + vsync_msg_onset_delay
         for s in events.MSG[events.MSG.label == 'FIDX:'].index if s in samp.index])
 samp = samp.loc[frame_start[0]:frame_start[-1] + 100]
 fidx = np.zeros(len(samp), dtype='int')

@@ -37,7 +37,7 @@ def movie_dataset(
     """
     # in frames (hand-verified by re-assembling in kdenlive -- using MELT
     # underneath)
-    seg_offsets = (0, 22149, 43801, 65303, 89304, 112006, 133558, 160260)
+    seg_offsets = (0, 22150, 43802, 65304, 89305, 112007, 133559, 160261)
     movie_fps = 25.0
     eyegaze_sr = 1000.0  # Hz
     intersegment_overlap = 400  # frames

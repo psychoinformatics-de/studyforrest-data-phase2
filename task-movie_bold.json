@@ -1,5 +1,19 @@
 {
-  "TaskDescription": "Participants watch the movie 'Forrest Gump' in eight segments", 
-  "CogAtlasID": "http://www.cognitiveatlas.org/task/id/trm_4c898da401420", 
+  "EchoTime": 0.030001,
+  "RepetitionTime": 2.00000061,
+  "SliceTiming": [0.0000, 0.0571, 0.1143, 0.1714, 0.2286, 0.2857, 0.3429, 0.4000, 0.4571, 0.5143, 0.5714, 0.6286, 0.6857, 0.7429, 0.8000, 0.8571, 0.9143, 0.9714, 1.0286, 1.0857, 1.1429, 1.2000, 1.2571, 1.3143, 1.3714, 1.4286, 1.4857, 1.5429, 1.6000, 1.6571, 1.7143, 1.7714, 1.8286, 1.8857, 1.9429],
+  "SliceEncodingDirection": "k",
+  "PhaseEncodingDirection": "j-",
+  "PulseSequenceType": "Fast Field Echo",
+  "ParallelReductionFactorInPlane": 2,
+  "ParallelAcquisitionTechnique": "SENSE",
+  "FlipAngle": 90,
+  "Manufacturer": "Philips Medical Systems",
+  "ManufacturerModelName": "Achieva dStream",
+  "MagneticFieldStrength": 3.0,
+  "ReceiveCoilName": "MULTI COIL",
+  "HardcopyDeviceSoftwareVersion": "5.1.7.0",
+  "TaskDescription": "Participants watch the movie 'Forrest Gump' in eight segments",
+  "CogAtlasID": "http://www.cognitiveatlas.org/task/id/trm_4c898da401420",
   "CogPOID": "http://www.cogpo.org/ontologies/Film_Clip"
 }

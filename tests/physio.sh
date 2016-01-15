@@ -15,23 +15,23 @@ check_physio()
 
 test_physio_movielocalizer_run()
 {
-    check_physio 48 ./sub-*/ses-localizer/func/*_ses-localizer_task-movielocalizer_recording-cardresp_run-*_physio.tsv.gz
+    check_physio 48 ./sub-*/ses-localizer/func/*_ses-localizer_task-movielocalizer_run-*_recording-cardresp_physio.tsv.gz
 }
 test_physio_retmap_runs()
 {
-    check_physio 90 ./sub-*/ses-localizer/func/*_ses-localizer_task-retmap_recording-cardresp_run-*_physio.tsv.gz
+    check_physio 90 ./sub-*/ses-localizer/func/*_ses-localizer_task-retmap_run-*_recording-cardresp_physio.tsv.gz
 }
 
 test_physio_localizer_runs()
 {
-    check_physio 156 ./sub-*/ses-localizer/func/*_ses-localizer_task-objectcategories_recording-cardresp_run-*_physio.tsv.gz
+    check_physio 156 ./sub-*/ses-localizer/func/*_ses-localizer_task-objectcategories_run-*_recording-cardresp_physio.tsv.gz
 }
 
 test_physio_movie_runs()
 {
   count=1
   for nvols in 451 441 438 488 462 439 542 338; do
-      check_physio $nvols ./sub-*/ses-movie/func/*_ses-movie_task-movie_recording-cardresp_run-${count}_physio.tsv.gz
+      check_physio $nvols ./sub-*/ses-movie/func/*_ses-movie_task-movie_run-${count}_recording-cardresp_physio.tsv.gz
       count=$(( $count + 1 ))
   done
 }

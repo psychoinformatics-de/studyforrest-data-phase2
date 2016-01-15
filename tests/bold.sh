@@ -6,7 +6,7 @@ dimensions="3.00x3.00x3.30x2.00 sform"
 test_bold_defacing()
 {
     vals=""
-    for f in $(find . -type f -name '*_bold.nii*'); do
+    for f in $(find . -name '*_bold.nii*'); do
       vals="$vals\n$(python -c "import nibabel as nb; print(nb.load(\"$f\").dataobj[37,71,6].sum())")"
       assertEquals \
         "All BOLD images have to have the same unit" \

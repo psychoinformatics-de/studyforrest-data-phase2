@@ -6,23 +6,33 @@
 #- gets the anonymised ID;
 #- cuts the first two lines of the original file;
 #- writes down a anonimised file into the anonymization directory using the anonimised filename.
-# - prints a line on the std_out with anonymised ID and run
 
 # Usage:
-# ./convert_eyetracker_av /path/to/filename.asc.gz
+# ./convert_eyelink /path/to/filename.asc.gz
 
 # Parse relevant information from original filename
 in_file="$(readlink -f $1)"
 raw_original_name=$(basename $1)
 original_id=${raw_original_name:0:4}
-the_run=${raw_original_name:7:1}
+
+if [ "${original_id:0:2}" = "et" ]; then
+  original_id="pi_$original_id"
+  the_run=${raw_original_name:6:1}
+else
+  the_run=${raw_original_name:7:1}
+fi
 
 # Extract the anonymised ID
-the_anon_id=$(../anon_id $original_id)
-the_anon_id=${the_anon_id:1:2}
+the_anon_id=$(../anon_id_bids $original_id)
 
-# Creates the target directory according to anonimised information
-mkdir -p sub-${the_anon_id}/ses-movie/func
-
-# Cut the first two lines of the file and redirect the output into a new file in the target directory
-zcat ${in_file} | tail -n +3 > sub-${the_anon_id}/ses-movie/func/sub-${the_anon_id}_ses-movie_task-movie_run-${the_run}_eyelinkraw.asc
+if [ "${original_id:0:3}" = "pi_" ]; then
+  # only behavioral experiment
+  mkdir -p ${the_anon_id}/beh
+  # Cut the first two lines of the file and redirect the output into a new file in the target directory
+  zcat ${in_file} | tail -n +3 > ${the_anon_id}/beh/${the_anon_id}_task-movie_run-${the_run}_eyelinkraw.asc
+else
+  # Creates the target directory according to anonimised information
+  mkdir -p ${the_anon_id}/ses-movie/func
+  # Cut the first two lines of the file and redirect the output into a new file in the target directory
+  zcat ${in_file} | tail -n +3 > ${the_anon_id}/ses-movie/func/${the_anon_id}_ses-movie_task-movie_run-${the_run}_eyelinkraw.asc
+fi

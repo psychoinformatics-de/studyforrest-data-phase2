@@ -35,17 +35,15 @@ def movie_dataset(
       the eyegaze recording duration difference from the expected value (in
       seconds).
     """
-    # total duration of the total researchcut length (after removing
-    # inter-segment overlap) is 7083.4s
-    # the intersegment overlap is exactly 400 movie frames
-    seg_durations = (902.0, 882.0, 876.0, 976.0, 924.0, 878.0, 1084.0, 673.4)
+    # in frames (hand-verified by re-assembling in kdenlive -- using MELT
+    # underneath)
+    seg_offsets = (0, 22150, 43802, 65304, 89305, 112007, 133559, 160261)
     movie_fps = 25.0
-    eyegaze_sr = 1000.0
+    eyegaze_sr = 1000.0  # Hz
     intersegment_overlap = 400  # frames
 
     segments = []
-    tdiff = []
-    for seg, duration in enumerate(seg_durations):
+    for seg, offset in enumerate(seg_offsets):
         raw = np.recfromcsv(
             os.path.join(base_path, fname_tmpl % dict(subj=subj, run=seg + 1)),
             delimiter='\t',
@@ -55,22 +53,18 @@ def movie_dataset(
         # glue together to form a dataset
         ds = Dataset(np.array((raw.x, raw.y, raw.pupil)).T,
                      sa=dict(movie_frame=raw.movie_frame))
-        ## truncate segment time series to remove overlap
         ds.sa['movie_run_frame'] = ds.sa.movie_frame.copy()
+        # turn into movie frame ID for the entire unsegmented movie
+        ds.sa.movie_frame += offset
+        ## truncate segment time series to remove overlap
         if seg < 7:
-            # clip the last frames, equal to half of the inter-segment overlap
-            ds = ds[ds.sa.movie_run_frame < (duration * movie_fps - intersegment_overlap / 2)]
+            # cut the end in a safe distance to the actual end, but inside the
+            # overlap
+            ds = ds[:-int(intersegment_overlap / movie_fps * eyegaze_sr)]
         if seg > 0:
-            # connect by next movie frame ID
-            #ds = ds[ds.sa.movie_run_frame > (intersegment_overlap / 2)]
-            # connect by eyetracking sample rate
-            ds = ds[int(intersegment_overlap / 2 / movie_fps * eyegaze_sr):]
-            # make segment-continuous movie frame counter
-            ds.sa.movie_frame += (segments[-1].sa.movie_frame[-1] - ds.sa.movie_frame[0] + 1)
-        if seg in (0, 7):
-            tdiff.append(duration - len(ds) / eyegaze_sr - intersegment_overlap / movie_fps / 2)
-        else:
-            tdiff.append(duration - len(ds) / eyegaze_sr - intersegment_overlap / movie_fps)
+            # cut the beginning to have a seamless start after the previous
+            # segment
+            ds = ds[ds.sa.movie_frame > segments[-1].sa.movie_frame.max()]
         ds.sa['movie_run'] = [seg + 1] * len(ds)
         segments.append(ds)
     ds = vstack(segments)
@@ -78,5 +72,18 @@ def movie_dataset(
     ds.fa['name'] = ('x', 'y', 'pupil')
     ds.a['sampling_rate'] = eyegaze_sr
     ds.a['movie_fps'] = movie_fps
-    ds.a['run_duration_deviation'] = tdiff
     return ds
+
+
+def preprocess_eyegaze(eyegaze, blink_margin=200, filter_width=40):
+    from scipy.ndimage.morphology import binary_dilation
+    from scipy.ndimage.filters import median_filter
+
+    mask = binary_dilation(np.isnan(eyegaze['x']), iterations=blink_margin)
+    # filter x and y coordinate separately
+    eyegaze['x'] = median_filter(eyegaze['x'], size=filter_width)
+    eyegaze['y'] = median_filter(eyegaze['y'], size=filter_width)
+    # blank blink margin
+    eyegaze['x'][mask] = np.nan
+    eyegaze['y'][mask] = np.nan
+    return eyegaze

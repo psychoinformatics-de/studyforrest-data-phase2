@@ -1,0 +1,3 @@
+[submodule "src/lab-eyetracking"]
+	path = src/lab-eyetracking
+	url = /home/data/psyinf/forrest_gump/collection/fg_eyegaze_raw

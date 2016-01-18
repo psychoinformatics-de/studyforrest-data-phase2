@@ -1,5 +1,6 @@
 {
     "Name": "studyforrest_phase2", 
+    "BIDSVersion": "1.0.0-rc3", 
     "Description": "Extension of the dataset published in Hanke et al. (2014; doi:10.1038/sdata.2014.3) with additional acquisitions for 15 of the original 20 particpants. These additions include: retinotopic mapping, a localizer paradigm for higher visual areas (FFA, EBA, PPA), and another 2h movie recording with 3T full-brain BOLD fMRI with simultaneous 1000 Hz eyetracking.", 
     "License": "PDDL", 
     "Authors": [

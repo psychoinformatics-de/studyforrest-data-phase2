@@ -29,10 +29,13 @@ import numpy as np
 import pylab as plt
 import scipy.ndimage as ndi
 import sys
+import os
 
 ### PARAMETERS
 # video output options
 alpha_video = 1
+
+heatmap = False
 
 # single gaze dots options
 alpha_gazes_single = .5
@@ -90,10 +93,28 @@ def get_hierarchy_levels(hierarchy):
 # open input video
 vid = cv2.VideoCapture(video_i_path)
 
-if tsv_path_list[0].isdigit():
+groupcolor = None
+if tsv_path_list[0][1:].isdigit():
+    groupcolor = [s.startswith('e') for s in tsv_path_list]
     # this is a subject id -> use utility function to load all data
-    from eyegaze_utils import movie_dataset
-    data_list = [movie_dataset(s) for s in tsv_path_list]
+    from mvpa2.base.hdf5 import h5load, h5save
+    from eyegaze_utils import movie_dataset, preprocess_eyegaze
+    data_list = []
+    for s in tsv_path_list:
+        cachefilename = os.path.join('cache', 'sub-%s_avmovie_eyegaze.hdf5' % s)
+        if os.path.exists(cachefilename):
+            ds = h5load(cachefilename)
+        else:
+            if s.startswith('e'):
+                ds = movie_dataset(
+                    'et%s' % s[1:],
+                    preprocess_eyegaze,
+                    base_path='../collection/fg_eyegaze',
+                    fname_tmpl='sub-%(subj)s/func/sub-%(subj)s_task-movie_run-%(run)i_recording-eyegaze_physio.tsv.gz')
+            else:
+                ds = movie_dataset(s, preprocess_eyegaze)
+            h5save(cachefilename, ds, compression=9)
+        data_list.append(ds)
     print data_list[0]
     data_list = [{'x': d.samples[:, 0],
                   'y': d.samples[:, 1],
@@ -109,31 +130,77 @@ vid_writer = cv2.VideoWriter()
 vid_writer.open(video_o_path, cv2.cv.CV_FOURCC(*'XVID'), vid.get(cv2.cv.CV_CAP_PROP_FPS), (int(vid.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)), int(vid.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))))
 
 ### colormap declaration
-colors_gaze_dots = plt.get_cmap('hsv', len(data_list) + 1)
+def colors_gaze_dots(idx):
+    if groupcolor is None:
+        return plt.get_cmap('hsv', len(data_list) + 1)(idx)
+    else:
+        if groupcolor[idx]:
+            return (1.0, 0.0, 1.0, 1.0)
+        else:
+            return (0.0, 1.0, 1.0, 1.0)
+
 colors_contourlines = plt.get_cmap('copper', n_contourlines)
 convert2cvcolor = lambda x: np.array(np.array(x[0:3]) * 255, int)
 
+
+def get_slice(arr, start_idx, crit):
+    idx = start_idx
+    val = arr[idx]
+    l = len(arr)
+    start = None
+    end = None
+    while val <= crit:
+        if start is None:
+            if val == crit:
+                start = idx
+        elif val != crit:
+            break
+        idx += 1
+        if idx >= l:
+            break
+        val = arr[idx]
+    end = idx
+    if start is None:
+        return slice(start_idx, start_idx)
+    else:
+        return slice(start, end)
+
+start_idx = [0] * len(data_list)
+
+start_frame = os.environ.get('FG_OVERLAY_STARTFRAME', None)
+stop_frame = os.environ.get('FG_OVERLAY_STOPFRAME', None)
+if not start_frame is None:
+    vid.set(cv2.cv.CV_CAP_PROP_POS_FRAMES, int(start_frame))
+
 ### loop through all images
 while 1:
+    frame = vid.get(cv2.cv.CV_CAP_PROP_POS_FRAMES)
+    if not stop_frame is None and frame >= int(stop_frame):
+        break
+    print(frame)
+
     (success, img) = vid.read()
 
     if not success:
         break
 
-    frame = vid.get(cv2.cv.CV_CAP_PROP_POS_FRAMES)
-    print(frame)
-
     # create image for single dot per gaze
     overlay_single_img = np.zeros((img.shape[0], img.shape[1], 3), 'uint8')
 
     # create image for heatmap that represents the disribution of gazes
-    heatmap = np.zeros((img.shape[0] / heatmap_scale, img.shape[1] / heatmap_scale), 'uint8')
-    overlay_heatmap_img = np.zeros((img.shape[0], img.shape[1], 3), 'uint8')
+    if heatmap:
+        heatmap = np.zeros((img.shape[0] / heatmap_scale, img.shape[1] / heatmap_scale), 'uint8')
+        overlay_heatmap_img = np.zeros((img.shape[0], img.shape[1], 3), 'uint8')
 
     for df_idx, df in enumerate(data_list):
-        selector = df['frame'] == frame
-        x = np.median(df['x'][selector]) + x_offset
-        y = np.median(df['y'][selector]) + y_offset
+        try:
+            slice_ = get_slice(df['frame'], start_idx[df_idx], int(frame))
+        except IndexError:
+            # end of array
+            break
+        start_idx[df_idx] = slice_.stop
+        x = np.median(df['x'][slice_]) + x_offset
+        y = np.median(df['y'][slice_]) + y_offset
 
         if not np.isnan(x):
             # draw single dots
@@ -142,23 +209,25 @@ while 1:
             cv2.fillConvexPoly(overlay_single_img, pts, convert2cvcolor(colors_gaze_dots(df_idx)))
 
             # mark position for heatmap
-            cv2.circle(heatmap, (int(x) / heatmap_scale, int(y) / heatmap_scale), 1, 1)
+            if heatmap:
+                cv2.circle(heatmap, (int(x) / heatmap_scale, int(y) / heatmap_scale), 1, 1)
 
-    # process heatmap
-    heatmap = np.array(heatmap, 'float32')
-    heatmap = ndi.gaussian_filter(heatmap, sigma=heatmap_gauss_sigma / heatmap_scale)
-    heatmap = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
-    cv2.normalize(heatmap, heatmap, 0, n_contourlines, cv2.NORM_MINMAX)
-    heatmap = np.array(heatmap, 'uint8') % 2
+    if heatmap:
+        # process heatmap
+        heatmap = np.array(heatmap, 'float32')
+        heatmap = ndi.gaussian_filter(heatmap, sigma=heatmap_gauss_sigma / heatmap_scale)
+        heatmap = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
+        cv2.normalize(heatmap, heatmap, 0, n_contourlines, cv2.NORM_MINMAX)
+        heatmap = np.array(heatmap, 'uint8') % 2
 
-    # find contours
-    contours, hierarchy = cv2.findContours(heatmap, cv2.cv.CV_RETR_TREE, cv2.cv.CV_CHAIN_APPROX_NONE)
-    hierarchy_levels = get_hierarchy_levels(hierarchy)
+        # find contours
+        contours, hierarchy = cv2.findContours(heatmap, cv2.cv.CV_RETR_TREE, cv2.cv.CV_CHAIN_APPROX_NONE)
+        hierarchy_levels = get_hierarchy_levels(hierarchy)
 
-    # draw contourlines
-    for i in range(len(contours)):
-        c2 = cv2.approxPolyDP(contours[i], 2, 0)
-        cv2.polylines(overlay_heatmap_img, [c2], 3, convert2cvcolor(colors_contourlines(hierarchy_levels[i])), 1)
+        # draw contourlines
+        for i in range(len(contours)):
+            c2 = cv2.approxPolyDP(contours[i], 2, 0)
+            cv2.polylines(overlay_heatmap_img, [c2], 3, convert2cvcolor(colors_contourlines(hierarchy_levels[i])), 1)
 
     # combine images
     final_img = cv2.addWeighted(img, alpha_video, img, 0, 0)
@@ -169,11 +238,12 @@ while 1:
     final_img = cv2.addWeighted(final_img, 1, mask_gaze_dots, -alpha_gazes_single, 0)
     final_img = cv2.addWeighted(final_img, 1, overlay_single_img, alpha_gazes_single, 0)
 
-    # combine images: gaze contour lines
-    mask_gaze_contour = np.array(ndi.maximum_filter(overlay_heatmap_img, [1, 1, 5]) != 0, 'uint8')
-    mask_gaze_contour = cv2.multiply(final_img, mask_gaze_contour)
-    final_img = cv2.addWeighted(final_img, 1, mask_gaze_contour, -alpha_gazes_contourlines, 0)
-    final_img = cv2.addWeighted(final_img, 1, overlay_heatmap_img, alpha_gazes_contourlines, 0)
+    if heatmap:
+        # combine images: gaze contour lines
+        mask_gaze_contour = np.array(ndi.maximum_filter(overlay_heatmap_img, [1, 1, 5]) != 0, 'uint8')
+        mask_gaze_contour = cv2.multiply(final_img, mask_gaze_contour)
+        final_img = cv2.addWeighted(final_img, 1, mask_gaze_contour, -alpha_gazes_contourlines, 0)
+        final_img = cv2.addWeighted(final_img, 1, overlay_heatmap_img, alpha_gazes_contourlines, 0)
 
     # write image to video writer
     vid_writer.write(final_img)

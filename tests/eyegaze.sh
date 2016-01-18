@@ -12,7 +12,7 @@ test_eyegaze_movie_runs()
     [ $count -eq 7 ] && target_frames=$(( $target_frames + 27))
     [ $count -eq 8 ] && target_frames=$(( $target_frames - 65))
     found_frames=""
-    for f in ./sub-*/ses-movie/func/*_ses-movie_task-movie_recording-eyegaze_run-${count}_physio.tsv.gz; do
+    for f in ./sub-*/beh/*_task-movie_run-${count}_recording-eyegaze_physio.tsv.gz ./sub-*/ses-movie/func/*_ses-movie_task-movie_run-${count}_recording-eyegaze_physio.tsv.gz; do
         found_frames="$found_frames\n$(zcat "$f" | tail -q -n1 | cut -f 4,4)"
         found_length="$(zcat "$f" | wc -l)"
         assertTrue "Check for minimum length (need: $target_length; found: $found_length)" "[ $found_length -gt $target_length ]"

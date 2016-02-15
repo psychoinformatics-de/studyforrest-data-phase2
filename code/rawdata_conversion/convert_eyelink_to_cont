@@ -10,15 +10,15 @@ assert(len(subjprefix.split('-')[1]) == 2)
 
 # TODO make all segments of uniform length with hese segment cuts
 # XXX plus 2s except for last one
-segment_cut = np.array((
-    22279,
-    21828,
-    21667,
-    24156,
-    22893,
-    21721,
-    26892,
-    16800))
+#segment_cut = np.array((
+#    22279,
+#    21828,
+#    21667,
+#    24156,
+#    22893,
+#    21721,
+#    26892,
+#    16800))
 
 # how much time does it take for the video signal to appear on the projection
 # screen after the stimulation computer thinks it flipped the video buffer

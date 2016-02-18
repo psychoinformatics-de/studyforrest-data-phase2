@@ -1,0 +1,161 @@
+#!/usr/bin/python
+
+"""
+@author: mih
+usage:
+convert_behavlog_labeyetracking.py <logfile> <outputdir>
+
+"""
+
+
+def sid2anonid(sid):
+    import subprocess
+    #return subprocess.check_output(['../anon_id_phase2', sid]).strip()
+    return subprocess.check_output(['../anon_id_bids', 'pi_%s' % sid]).strip()
+
+import os
+import sys
+
+logfilename = sys.argv[1]
+outdir = sys.argv[2]
+task = "movie"
+
+def fname2sid(filename):
+    test = os.path.split(filename)[1].split('_')[0]
+    return test
+
+
+def log2data(fname):
+    """Parse logfile and extract relevant data
+
+    Parameters
+    ----------
+    fname : str
+      Log file name
+
+    Returns
+    -------
+    list
+      Each item is a list with the relevant fields from the relevant lines.
+    """
+    outsegments = {}
+    ratings = []
+    seg = None
+    import gzip
+    import re
+    #for line in gzip.open(fname, 'r'):
+    for line in open(fname, 'r'):
+        seq = line.split()
+        time = float(seq[0])
+        log = ' '.join(seq[2:])
+        if 'Created movie_clip' in log:
+            if not seg is None:
+                outsegments[seg] = out
+            #seg = int(re.match('.*videos/fg_av_seg(\d)\.mkv', log).groups()[0])
+            seg = int(re.match('.*videos/fg_av_ger_seg(\d)\.mkv', log).groups()[0])
+            out = outsegments.get(seg, [])
+            start_trigger = None
+            last_trigger_time = None
+            last_fidx = None
+            last_fonset = None
+            last_ast = None
+            last_vst = None
+            last_rating = None
+        if seg is None:
+            # ignore everything before start of first segment
+            continue
+        if log.startswith('Keypress: t'):
+            # trigger handling
+            if start_trigger is None:
+                start_trigger = time
+            last_trigger_time = time
+        elif last_fidx is None and last_rating is None and log.startswith('Keypress:'):
+            last_rating = int(log.split()[-1])
+            ratings.append(last_rating)
+        if log.startswith('VST: '):
+            last_vst = float(log.split()[-1])
+        if log.startswith('AST: '):
+            last_ast = float(log.split()[-1])
+        if log.startswith('MYLOG: FIDX'):
+            fidx = int(float(log.split('=')[1]))
+            if fidx != last_fidx:
+                if last_fonset is None:
+                    last_fonset = time
+                    last_fidx = fidx
+                    continue
+                out.append((last_fonset - start_trigger,
+                            time - last_fonset,
+                            last_fidx,
+                            last_vst,
+                            last_ast,
+                            last_trigger_time - start_trigger))
+                last_fonset = time
+                last_fidx = fidx
+                last_ast = last_vst = None
+        if start_trigger and last_fidx and (log.startswith('Set pos=') or log.startswith('unnamed PatchStim') or log.startswith('story_depth_question: autoDraw = True')):
+            # at the end of a segment, flush last frame
+            out.append((last_fonset - start_trigger,
+                        time - last_fonset,
+                        last_fidx,
+                        last_vst,
+                        last_ast,
+                        last_trigger_time - start_trigger))
+            last_fidx = None
+
+    outsegments[seg] = out
+    return outsegments, ratings
+
+
+def write_onsets(data, outdir, anonid, run, task):
+    fname = os.path.join(
+        #outdir, anonid, 'ses-movie', 'func',
+        #'%s_ses-movie_task-%s_run-%i_events.tsv'
+        outdir, anonid, 'beh',
+        '%s_task-%s_run-%i_events.tsv'
+        % (anonid, task, run))
+    path = os.path.dirname(fname)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    import csv
+    with open(fname, 'w') as csvfile:
+        writer = csv.writer(
+            csvfile, delimiter='\t',
+            quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(['onset', 'duration', 'frameidx', 'videotime', 'audiotime', 'lasttrigger'])
+        for f in data:
+            writer.writerow(
+                ("%.3f" % f[0],
+                 "%.3f" % f[1],
+                 f[2],
+                 "%.3f" % f[3],
+                 "%.3f" % f[4],
+                 "%.3f" % f[5]))
+
+
+def generate_output(data, outdir, anonid, task):
+    import json
+    onsets, ratings = data
+    assert(len(onsets) == 8)
+    assert(len(ratings) == 8)
+    for seg in onsets:
+        assert(seg in range(8))
+        write_onsets(onsets[seg], outdir, anonid, seg + 1, 'movie')
+    # ratings
+    fname = os.path.join(
+        #outdir, anonid, 'ses-movie',
+        #'%s_ses-movie_task-%s_bold.json' % (anonid, task))
+        outdir, anonid,
+        '%s_task-%s_beh.json' % (anonid, task))
+    json.dump({"StoryDepthSegmentRatings": ratings}, open(fname, 'w'), indent=4)
+
+
+
+
+##############################
+##############################
+##############################
+
+data = log2data(logfilename)
+sid = fname2sid(logfilename)
+anonid = sid2anonid(sid)
+generate_output(data, outdir, anonid, task)

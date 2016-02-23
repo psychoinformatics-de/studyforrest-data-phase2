@@ -3,12 +3,12 @@ sub-01	m	30-35	r	n	n	n	n	y	12	6	german;english	y	2	3	2	2	18
 sub-02	m	35-40	r	n	n	n	n	y	0	20	german;english	y	4	3	2	4	30
 sub-03	f	20-25	r	n	n	n	n	n				y	4	4	1	4	8
 sub-04	f	20-25	r	n	n	n	n	y	1	1	german	y	4	4	2	4	10
-sub-05	m	30-35	r	n	n	y	n	y	120	1	german	y	4	4	1	4	12
+sub-05	m	30-35	r	n	n	n	n	y	120	1	german	y	4	4	1	4	12
 sub-06	m	20-25	r	n	y	n	n	y	1	30	german;english	y	4	4	2	4	40
 sub-09	m	35-40	r	n	n	n	n	y	240	1	german	y	4	4	1	4	20
 sub-10	f	20-25	r	n	n	n	n	y	36	1	german	y	4	4	1	4	9
 sub-14	f	30-35	r	n	n	n	n	y	108	1	german	y	4	4	2	4	6
-sub-15	m	25-30	r	n	n	y	y	y	60	1	german	y	3	3	2	4	15
+sub-15	m	25-30	r	n	n	n	y	y	60	1	german	y	3	3	2	4	15
 sub-16	m	35-40	r	n	n	n	n	y		1	german	y	4	4	2	3	10
 sub-17	m	30-35	r	n	n	n	n	y	12	5	german	y	3	3	1	4	10
 sub-18	m	30-35	r	n	n	n	n	y	156	2	german	y	4	4	2	4	7

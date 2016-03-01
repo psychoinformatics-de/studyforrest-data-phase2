@@ -13,6 +13,6 @@
   "MagneticFieldStrength": 3.0,
   "ReceiveCoilName": "MULTI COIL",
   "HardcopyDeviceSoftwareVersion": "5.1.7.0",
-  "TaskDescription": "Participants fixate the center of the screen while the stimulus is being displayed. The order of stimuli across runs was constant across subjects. R1: contracting ring, R2: counter-clockwise wedge, R3: expanding ring, R4: clockwise wedge. A unilateral wedge was used, not a 'propellor'.",
+  "TaskDescription": "Participants fixate the center of the screen while a contracting ring stimulus is being displayed.",
   "CogAtlasID": "http://www.cognitiveatlas.org/term/id/trm_558c4d3105abf"
 }

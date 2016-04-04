@@ -10,7 +10,19 @@ This is an extension of the studyforrest project, all participants previously
 volunteered for the audio-only Forrest Gump study. The datset is structured in
 BIDS format, details of the files and metadata can be found at:
 
-[in prep.]
+     Ayan Sengupta, Falko R. Kaule, J. Swaroop Guntupalli, Michael B. Hoffmann,
+     Christian Häusler, Jörg Stadler, Michael Hanke. `An extension of the
+     studyforrest dataset for vision research
+     <http://biorxiv.org/content/early/2016/03/31/046573>`_. (submitted for
+     publication)
+
+     Michael Hanke, Nico Adelhöfer, Daniel Kottke, Vittorio Iacovella,
+     Ayan Sengupta, Falko R. Kaule, Roland Nigbur, Alexander Q. Waite,
+     Florian J. Baumgartner & Jörg Stadler. `Simultaneous fMRI and eye gaze
+     recordings during prolonged natural stimulation – a studyforrest extension
+     <http://biorxiv.org/content/early/2016/03/31/046581>`_. (submitted for
+     publication)
+
 
 For more information about the project visit: http://studyforrest.org
 

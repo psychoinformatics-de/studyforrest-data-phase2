@@ -23,12 +23,19 @@ BIDS format, details of the files and metadata can be found at:
      <http://biorxiv.org/content/early/2016/03/31/046581>`_. (submitted for
      publication)
 
-
 For more information about the project visit: http://studyforrest.org
 
 
-How to obtain the data files
-----------------------------
+How to obtain the dataset
+-------------------------
+
+The dataset is available for download from `OpenFMRI (accession number
+ds000113d) <https://www.openfmri.org/dataset/ds000113d>`_.
+
+Alternatively, the `studyforrest phase 2 repository on GitHub
+<https://github.com/psychoinformatics-de/studyforrest-data-phase2>`_ provides
+fine-grained access, down to the level of individual files, and allow for
+tracking future updates.
 
 This repository contains metadata and information on the identity of all
 included files. However, the actual content of the (sometime large) data
@@ -49,6 +56,7 @@ Now any desired dataset component can be obtained by using the ``git annex get``
 command. To obtain the entire dataset content run::
 
      git annex get .
+
 
 Keep data up-to-date
 --------------------

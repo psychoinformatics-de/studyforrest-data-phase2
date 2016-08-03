@@ -1,0 +1,21 @@
+Stimulus creation and verification
+==================================
+
+This folder contains scripts and data files to generate the stimulus videos and
+to verify them. Timing verification can be done by comparing the timing of cuts
+in the movie:
+
+`mk_movie_stimulus.sh`:
+  Script to generate the stimulus segment videos, given a DVD/Blueray stream.
+
+`segment_timing.csv`:
+  Table specifying the temporal position of all 8 stimulus movie segments with
+  respect to the (research-)cut full movie time series.
+
+`cuts_wholemovie.csv`:
+  Table identifying all cuts (time and start frame of the following shot) in
+  the unsegmented movie time series.
+
+`cuts_segment*.csv`:
+  Analog to `cuts_wholemovie.csv`, but with timing and cuts for each movie
+  segment seperately.

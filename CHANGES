@@ -2,6 +2,8 @@
 
   - Fix task label for retmapping run with contracting stimulus
     (expcon -> con).
+  - Add dedicated task-*_physio.json files to indicate task congruence
+    between BOLD and physiological measurements.
 
 1.3 2016-08-04
 

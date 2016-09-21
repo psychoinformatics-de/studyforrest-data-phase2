@@ -1,3 +1,8 @@
+1.4 2016-09-21
+
+  - Fix task label for retmapping run with contracting stimulus
+    (expcon -> con).
+
 1.3 2016-08-04
 
   - Add annotation of cuts in the movie stimulus (per-segment, and for the

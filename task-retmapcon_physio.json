@@ -1,4 +1,5 @@
 {
+  "TaskName": "retmapcon",
   "TaskDescription": "Participants fixate the center of the screen while a contracting ring stimulus is being displayed.",
   "CogAtlasID": "http://www.cognitiveatlas.org/term/id/trm_558c4d3105abf"
 }

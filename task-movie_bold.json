@@ -13,6 +13,7 @@
   "MagneticFieldStrength": 3.0,
   "ReceiveCoilName": "MULTI COIL",
   "HardcopyDeviceSoftwareVersion": "5.1.7.0",
+  "TaskName": "movie",
   "TaskDescription": "Participants watch the movie 'Forrest Gump' in eight segments",
   "CogAtlasID": "http://www.cognitiveatlas.org/task/id/trm_4c898da401420",
   "CogPOID": "http://www.cogpo.org/ontologies/Film_Clip"

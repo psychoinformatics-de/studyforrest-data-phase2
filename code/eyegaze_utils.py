@@ -6,7 +6,7 @@ from mvpa2.datasets import Dataset, vstack
 def movie_dataset(
         subj, preproc=None,
         base_path=os.curdir,
-        fname_tmpl='sub-%(subj)s/ses-movie/func/sub-%(subj)s_ses-movie_task-movie_run-%(run)i_recording-eyegaze_physio.tsv.gz'):
+        fname_tmpl='sub-{subj:02d}/ses-movie/func/sub-{subj:02d}_ses-movie_task-movie_run-{run}_recording-eyegaze_physio.tsv.gz'):
     """
     Load eyegaze recordings from all runs a merge into a consecutive timeseries
 
@@ -37,22 +37,24 @@ def movie_dataset(
     """
     # in frames (hand-verified by re-assembling in kdenlive -- using MELT
     # underneath)
+    # and inline with phase2/code/stimulus/movie/segment_timing.csv
     seg_offsets = (0, 22150, 43802, 65304, 89305, 112007, 133559, 160261)
     movie_fps = 25.0
     eyegaze_sr = 1000.0  # Hz
-    intersegment_overlap = 400  # frames
+    intersegment_overlap = 150  # frames
 
     segments = []
     for seg, offset in enumerate(seg_offsets):
         raw = np.recfromcsv(
-            os.path.join(base_path, fname_tmpl % dict(subj=subj, run=seg + 1)),
+            os.path.join(base_path, fname_tmpl.format(subj=subj, run=seg + 1)),
             delimiter='\t',
             names=('x', 'y', 'pupil', 'movie_frame'))
         if not preproc is None:
             raw = preproc(raw)
         # glue together to form a dataset
         ds = Dataset(np.array((raw.x, raw.y, raw.pupil)).T,
-                     sa=dict(movie_frame=raw.movie_frame))
+                     # movie frame idx is not zero-based in the files
+                     sa=dict(movie_frame=raw.movie_frame - 1))
         ds.sa['movie_run_frame'] = ds.sa.movie_frame.copy()
         # turn into movie frame ID for the entire unsegmented movie
         ds.sa.movie_frame += offset
@@ -61,10 +63,16 @@ def movie_dataset(
             # cut the end in a safe distance to the actual end, but inside the
             # overlap
             ds = ds[:-int(intersegment_overlap / movie_fps * eyegaze_sr)]
+            # introduce an artificial blink at the end (see below)
+            ds.samples[-100:] = np.nan
         if seg > 0:
             # cut the beginning to have a seamless start after the previous
             # segment
             ds = ds[ds.sa.movie_frame > segments[-1].sa.movie_frame.max()]
+            # second half of the artificial blink. this is to avoid the
+            # impression of a saccade at the point where two segments are
+            # sown together
+            ds.samples[:100] = np.nan
         ds.sa['movie_run'] = [seg + 1] * len(ds)
         segments.append(ds)
     ds = vstack(segments)

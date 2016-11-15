@@ -24,6 +24,7 @@ Author:
   Daniel Kottke (daniel.kottke@ovgu.de)
 """
 
+from __future__ import print_function
 import cv2
 import numpy as np
 import pylab as plt
@@ -94,35 +95,37 @@ def get_hierarchy_levels(hierarchy):
 vid = cv2.VideoCapture(video_i_path)
 
 groupcolor = None
-if tsv_path_list[0][1:].isdigit():
-    groupcolor = [s.startswith('e') for s in tsv_path_list]
-    # this is a subject id -> use utility function to load all data
-    from mvpa2.base.hdf5 import h5load, h5save
-    from eyegaze_utils import movie_dataset, preprocess_eyegaze
-    data_list = []
-    for s in tsv_path_list:
-        cachefilename = os.path.join('cache', 'sub-%s_avmovie_eyegaze.hdf5' % s)
-        if os.path.exists(cachefilename):
-            ds = h5load(cachefilename)
+#if tsv_path_list[0][1:].isdigit():
+groupcolor = [int(s) > 20 for s in tsv_path_list]
+# this is a subject id -> use utility function to load all data
+from mvpa2.base.hdf5 import h5load, h5save
+from eyegaze_utils import movie_dataset, preprocess_eyegaze
+data_list = []
+for s in tsv_path_list:
+    s = int(s)
+    cachefilename = os.path.join('cache', 'sub-%s_avmovie_eyegaze.hdf5' % s)
+    if os.path.exists(cachefilename):
+        print("Load from cache {}".format(cachefilename))
+        ds = h5load(cachefilename)
+    else:
+        print("Load from scratch (cache in {})".format(cachefilename))
+        if s > 20:
+            ds = movie_dataset(
+                s,
+                preprocess_eyegaze,
+                fname_tmpl='sub-{subj:02d}/beh/sub-{subj:02d}_task-movie_run-{run}_recording-eyegaze_physio.tsv.gz')
         else:
-            if s.startswith('e'):
-                ds = movie_dataset(
-                    'et%s' % s[1:],
-                    preprocess_eyegaze,
-                    base_path='../collection/fg_eyegaze',
-                    fname_tmpl='sub-%(subj)s/func/sub-%(subj)s_task-movie_run-%(run)i_recording-eyegaze_physio.tsv.gz')
-            else:
-                ds = movie_dataset(s, preprocess_eyegaze)
-            h5save(cachefilename, ds, compression=9)
-        data_list.append(ds)
-    print data_list[0]
-    data_list = [{'x': d.samples[:, 0],
-                  'y': d.samples[:, 1],
-                  'frame': d.sa.movie_frame} for d in data_list]
-else:
-    # open data as record array
-    data_list = map(lambda fn: np.recfromcsv(fn, names=['x', 'y', 'pup', 'frame'], delimiter='\t'), tsv_path_list)
-    data_list = [{'x': d['x'], 'y': d['y'], 'frame': d['frame']} for d in data_list]
+            ds = movie_dataset(s, preprocess_eyegaze)
+        h5save(cachefilename, ds, compression=9)
+    data_list.append(ds)
+print(data_list[0])
+data_list = [{'x': d.samples[:, 0],
+              'y': d.samples[:, 1],
+              'frame': d.sa.movie_frame} for d in data_list]
+#else:
+#    # open data as record array
+#    data_list = map(lambda fn: np.recfromcsv(fn, names=['x', 'y', 'pup', 'frame'], delimiter='\t'), tsv_path_list)
+#    data_list = [{'x': d['x'], 'y': d['y'], 'frame': d['frame']} for d in data_list]
 
 ### OTHER DATE DECLARATIONS
 # create video writer
@@ -177,8 +180,6 @@ while 1:
     frame = vid.get(cv2.cv.CV_CAP_PROP_POS_FRAMES)
     if not stop_frame is None and frame >= int(stop_frame):
         break
-    print(frame)
-
     (success, img) = vid.read()
 
     if not success:
@@ -247,3 +248,7 @@ while 1:
 
     # write image to video writer
     vid_writer.write(final_img)
+
+    print(frame, end=' ')
+    sys.stdout.flush()
+

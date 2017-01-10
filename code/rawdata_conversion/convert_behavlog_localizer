@@ -11,7 +11,8 @@ convert_behavlog_localizer.py <logfile> <outputdir>
 
 def sid2anonid(sid):
     import subprocess
-    return subprocess.check_output(['../anon_id_phase2', sid]).strip()
+    return subprocess.check_output(['../anon_id_bids', sid]).strip()
+
 
 import os
 import sys
@@ -20,6 +21,7 @@ logfilename = sys.argv[1]
 outdir = sys.argv[2]
 task = "objectcategories"
 block_stim_length = 16  # in seconds
+stim_prefix = 'stimuli/visualarea_localizer/'
 
 condition_labels = ['body', 'face', 'house', 'object', 'scene', 'scramble']
 
@@ -43,11 +45,42 @@ def log2data(fname):
       Each item is a list with the relevant fields from the relevant lines.
     """
     out = []
+    curblock = None
+    img1 = None
+    img2 = None
+    trial_specs = []
     for line in open(fname, 'r'):
         seq = line.split()
-        if len(seq) < 3 or not seq[2].startswith('MYLOG:'):
+        if len(seq) < 3:
             continue
-        out.append((seq[0], seq[4], seq[5]))
+        if seq[2].startswith('MYLOG:'):
+            out.append((seq[0], seq[4], seq[5]))
+            if seq[4] == 'BLOCK':
+                curblock = seq[5]
+            elif seq[4] == 'RUN':
+                curblock = None
+        elif seq[2] == 'Set' and seq[3] == 'show_img1':
+            img1 = stim_prefix + '/'.join(seq[4].split('=')[-1].split('/')[1:])
+        elif seq[2] == 'Set' and seq[3] == 'show_img2':
+            img2 = stim_prefix + '/'.join(seq[4].split('=')[-1].split('/')[1:])
+        elif curblock and seq[2] == 'ImageStim:' and (img1 or img2):
+            if not trial_specs:
+                # image onset
+                trial_specs.append(float(seq[0]))
+            else:
+                # image offset
+                if img1:
+                    img = img1
+                    img1 = None
+                else:
+                    img = img2
+                    img2 = None
+                trial_specs.extend((
+                    float(seq[0]) - trial_specs[0],
+                    curblock,
+                    img))
+                out.append(trial_specs)
+                trial_specs = []
 
     return out
 
@@ -65,28 +98,32 @@ def write_onsets(onsets, outdir, anonid, run, task):
         writer = csv.writer(
             csvfile, delimiter='\t',
             quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(['onset', 'duration', 'trial_type'])
-        for cond, onset in onsets:
-            writer.writerow(["%.3f" % onset, 16, cond])
+        writer.writerow(['onset', 'duration', 'trial_type', 'stim_file'])
+        for onset, duration, cond, stim in onsets:
+            writer.writerow([
+                "%.3f" % onset,
+                "%.3f" % duration,
+                cond,
+                stim])
 
 
 def generate_output(data, outdir, anonid, task):
     run_counter = 0
-    block_counter = 0
     run_begin = 0.0
     onsets = None
 
     for line in data:
         if line[1] == 'RUN':
-            if not onsets is None:
+            if onsets is not None:
                 write_onsets(onsets, outdir, anonid, run_counter, task)
             run_begin = float(line[0])
             run_counter += 1
             onsets = []
         elif line[1] == 'BLOCK':
-            cond = line[2]
-            onsets.append((cond, float(line[0]) - run_begin))
-            block_counter += 1
+            continue
+        elif len(line) == 4:
+            # actual event
+            onsets.append([line[0] - run_begin] + line[1:])
         else:
             raise RuntimeError("I am not possible")
     write_onsets(onsets, outdir, anonid, run_counter, task)

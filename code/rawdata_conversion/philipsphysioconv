@@ -82,7 +82,7 @@ for i, line in enumerate(
 
 # truncate list to end with the data that carried the last end marker
 ppu = ppu[:end_mark + 1]
-resp = ppu[:end_mark + 1]
+resp = resp[:end_mark + 1]
 
 # convert to numpy array
 data = np.zeros((len(ppu), 3), dtype=int)

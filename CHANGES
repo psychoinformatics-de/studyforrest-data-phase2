@@ -1,3 +1,9 @@
+1.5 2018-01-19
+
+  - Physiology recordings did not contain respiratory trace due to a bug in the
+    converter script, but instead the pleth pulse (twice). Re-imported data
+    after converter fix. Thanks to Theresa Thäßler for the report!
+
 1.4 2016-09-21
 
   - Fix task label for retmapping run with contracting stimulus

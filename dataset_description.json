@@ -1,7 +1,6 @@
 {
     "Name": "studyforrest_phase2", 
     "BIDSVersion": "1.0.0-rc3", 
-    "Description": "Extension of the dataset published in Hanke et al. (2014; doi:10.1038/sdata.2014.3) with additional acquisitions for 15 of the original 20 particpants. These additions include: retinotopic mapping, a localizer paradigm for higher visual areas (FFA, EBA, PPA), and another 2h movie recording with 3T full-brain BOLD fMRI with simultaneous 1000 Hz eyetracking.", 
     "License": "PDDL", 
     "Authors": [
         "Michael Hanke", 
@@ -17,7 +16,9 @@
     ], 
     "Acknowledgements": "Only open-source software was employed in this study. We thank their respective authors for making it publicly available.", 
     "HowToAcknowledge": "Please follow good scientific practice by citing the most appropriate publication(s) describing the aspects of this datasets that were used in a study.", 
-    "Funding": "We acknowledge the support of the Combinatorial NeuroImaging Core Facility at the Leibniz Institute for Neurobiology in Magdeburg, and the German federal state of Saxony-Anhalt, Project: Center for Behavioral Brain Sciences. This research was, in part, also supported by the German Federal Ministry of Education and Research (BMBF) as part of a US-German collaboration in computational neuroscience (CRCNS), co-funded by the BMBF and the US National Science Foundation (BMBF 01GQ1112; NSF 1129855). Work on the data-sharing technology employed for this research was supported by US-German CRCNS project, co-funded by the BMBF and the US National Science Foundation (BMBF 01GQ1411; NSF 1429999).", 
+    "Funding": [
+        "We acknowledge the support of the Combinatorial NeuroImaging Core Facility at the Leibniz Institute for Neurobiology in Magdeburg, and the German federal state of Saxony-Anhalt, Project: Center for Behavioral Brain Sciences. This research was, in part, also supported by the German Federal Ministry of Education and Research (BMBF) as part of a US-German collaboration in computational neuroscience (CRCNS), co-funded by the BMBF and the US National Science Foundation (BMBF 01GQ1112; NSF 1129855). Work on the data-sharing technology employed for this research was supported by US-German CRCNS project, co-funded by the BMBF and the US National Science Foundation (BMBF 01GQ1411; NSF 1429999)."
+    ],
     "ReferencesAndLinks": [
         "http://studyforrest.org"
     ]

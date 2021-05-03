@@ -1,0 +1,2 @@
+2e08100d-2cfa-4391-a71a-4facc90438cc archive-id=5eaff716-54eb-11e8-803d-a0369f7c647e autoenable=true encryption=none externaltype=ora name=inm7-storage push-url=ria+ssh://bulk1.htc.inm7.de/ds/studyforrest/srv type=external url=ria+http://studyforrest.ds.inm7.de timestamp=1619602584.460886163s
+2f51364e-815a-4ad9-b380-617c682b1680 autoenable=true location=http://psydata.ovgu.de/studyforrest/phase2/.git name=mddatasrc type=git timestamp=1452859209.790328s

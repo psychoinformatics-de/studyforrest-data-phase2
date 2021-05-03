@@ -33,6 +33,17 @@ authors:
   - firstname: Jörg
     lastname: Stadler
 
+  - firstname: Adina
+    lastname: Wagner
+    id: "ORCID:0000-0003-2917-3450"
+
+  - firstname: Laura
+    lastname: Waite
+    id: "ORCID:0000-0003-2213-7465"
+
+  - firstname: William
+    lastname: Triplett
+
 
 title: "Simultaneous fMRI/eyetracking while movie watching, plus visual localizers"
 
